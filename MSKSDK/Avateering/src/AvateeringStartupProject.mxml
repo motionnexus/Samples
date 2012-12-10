@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:skeleton="skeleton.*"
+			   width="100%"
+			   height="100%"
+			   backgroundAlpha="0"
+			   frameRate="30"
+			   creationComplete="onCreationCompleteHandler(event)"
+			   xmlns:avateering="com.motionnexus.avateering.*">
+	<fx:Script>
+		<![CDATA[
+			import com.motionnexus.avateering.AvatarRigged;
+			import com.motionnexus.avateering.avatars.AlexisSkeleton;
+			import com.motionnexus.avateering.avatars.JustinSkeleton;
+			import com.motionnexus.avateering.data.skeleton.AvateeringSkeleton;
+			import com.motionnexus.avateering.processors.AvateeringConstrainProcessor;
+			import com.motionnexus.avateering.processors.AvateeringRotationProcessor;
+			import com.motionnexus.plugin.MotionNexus;
+			import com.motionnexus.plugin.data.settings.MotionNexusPluginSettings;
+			import com.motionnexus.plugin.data.skeleton.MotionNexusSkeleton;
+			import com.motionnexus.plugin.events.MotionNexusCameraEvent;
+			import com.motionnexus.plugin.events.MotionNexusSkeletonEvent;
+
+			import mx.events.FlexEvent;
+
+			import spark.events.IndexChangeEvent;
+			private var _currentX:Number=0;
+			private var _currentY:Number=0;
+			private var _currentZ:Number=0;
+
+			protected function onCreationCompleteHandler(event:FlexEvent):void
+			{
+				MotionNexus.initializeWithApplicationId('7da275b6-9f13-4607-a498-d2e55150fbca');
+				var settings:MotionNexusPluginSettings=new MotionNexusPluginSettings(MotionNexusPluginSettings.USER_LOCAL, false, false, false, true);
+				MotionNexus.pluginSettings=settings;
+				MotionNexus.addEventListener(MotionNexusSkeletonEvent.USER_SKELETON_UPDATED, updateSkeleton);
+				MotionNexus.addEventListener(MotionNexusCameraEvent.IMAGE_UPDATED, depthImageUpdated);
+			}
+
+			public function depthImageUpdated(event:MotionNexusCameraEvent):void
+			{
+				depthImage.source=event.image;
+			}
+
+			public function updateSkeleton(evt:MotionNexusSkeletonEvent):void
+			{
+				var skeletonAv:AvateeringSkeleton=processSkeletonMixamo(evt.userSkeleton);
+				avatarWorld.setJointRotation(skeletonAv.leftShoulderRotation, AvatarRigged.LEFT_SHOULDER);
+				avatarWorld.setJointRotation(skeletonAv.rightShoulderRotation, AvatarRigged.RIGHT_SHOULDER);
+				avatarWorld.setJointRotation(skeletonAv.leftElbowRotation, AvatarRigged.LEFT_ELBOW);
+				avatarWorld.setJointRotation(skeletonAv.rightElbowRotation, AvatarRigged.RIGHT_ELBOW);
+				avatarWorld.setJointRotation(skeletonAv.leftWristRotation, AvatarRigged.LEFT_ARM);
+				avatarWorld.setJointRotation(skeletonAv.rightWristRotation, AvatarRigged.RIGHT_ARM);
+				avatarWorld.setJointRotation(skeletonAv.leftHandRotation, AvatarRigged.LEFT_HAND);
+				avatarWorld.setJointRotation(skeletonAv.rightHandRotation, AvatarRigged.RIGHT_HAND);
+				avatarWorld.setJointRotation(skeletonAv.spineRotation, AvatarRigged.SPINE);
+				avatarWorld.setJointRotation(skeletonAv.headRotation, AvatarRigged.HEAD);
+				avatarWorld.setJointRotation(skeletonAv.leftHipRotation, AvatarRigged.LEFT_HIP);
+				avatarWorld.setJointRotation(skeletonAv.rightHipRotation, AvatarRigged.RIGHT_HIP);
+				avatarWorld.setJointRotation(skeletonAv.leftKneeRotation, AvatarRigged.LEFT_KNEE);
+				avatarWorld.setJointRotation(skeletonAv.rightKneeRotation, AvatarRigged.RIGHT_KNEE);
+
+				avatarWorld.moveModelVertical((skeletonAv.rightKneeRotation.x + skeletonAv.leftKneeRotation.x) / 2);
+				avatarWorld.moveModelHorizontal(evt.userSkeleton.hipCenter.depth.x - 160);
+				avatarWorld.setJointRotation(skeletonAv.leftFootRotation, AvatarRigged.LEFT_FOOT);
+				avatarWorld.setJointRotation(skeletonAv.rightFootRotation, AvatarRigged.RIGHT_FOOT);
+			}
+
+			protected function processSkeletonMixamo($skeleton:MotionNexusSkeleton):AvateeringSkeleton
+			{
+				AvateeringConstrainProcessor.constrain($skeleton);
+				var avateeringSkeleton:AvateeringSkeleton=new AvateeringSkeleton();
+				avateeringSkeleton.leftShoulderRotation=AvateeringRotationProcessor.processShoulder($skeleton, true, 0, 0, -30, 80);
+				avateeringSkeleton.rightShoulderRotation=AvateeringRotationProcessor.processShoulder($skeleton, false, 0, 0, 30, 80);
+				avateeringSkeleton.leftElbowRotation=AvateeringRotationProcessor.processElbow($skeleton, true, 0, 0, 0, 80);
+				avateeringSkeleton.rightElbowRotation=AvateeringRotationProcessor.processElbow($skeleton, false, 0, 0, 0, 80);
+				avateeringSkeleton.leftWristRotation=AvateeringRotationProcessor.processWrist($skeleton, true, 0, -15, -15, 80);
+				avateeringSkeleton.rightWristRotation=AvateeringRotationProcessor.processWrist($skeleton, false, 0, -15, -15, 80);
+				avateeringSkeleton.leftHandRotation=AvateeringRotationProcessor.processHand($skeleton, true, 0, 90, 0, 80);
+				avateeringSkeleton.rightHandRotation=AvateeringRotationProcessor.processHand($skeleton, false, 0, 70, 0, 80);
+				avateeringSkeleton.spineRotation=AvateeringRotationProcessor.processSpine($skeleton, 20, 0, 0);
+				avateeringSkeleton.headRotation=AvateeringRotationProcessor.processHead($skeleton, 20, 0, 0);
+				avateeringSkeleton.leftHipRotation=new Vector3D(AvateeringRotationProcessor.processHip($skeleton, true, 0, 0, 0, 175).x, -AvateeringRotationProcessor.processHip($skeleton, true, 0, 0, -45, 100).z, 0);
+				avateeringSkeleton.rightHipRotation=new Vector3D(AvateeringRotationProcessor.processHip($skeleton, false, 0, 0, 0, 175).x, -AvateeringRotationProcessor.processHip($skeleton, false, 0, 0, 45, 100).z, 0);
+				avateeringSkeleton.leftKneeRotation=AvateeringRotationProcessor.processKnee($skeleton, true, 0, 0, 0, 80);
+				avateeringSkeleton.rightKneeRotation=AvateeringRotationProcessor.processKnee($skeleton, false, 0, 0, 0, 80);
+				avateeringSkeleton.leftFootRotation=AvateeringRotationProcessor.processFoot($skeleton, true, -45);
+				avateeringSkeleton.rightFootRotation=AvateeringRotationProcessor.processFoot($skeleton, false, -45);
+				return avateeringSkeleton;
+			}
+
+			protected function rotateXAxis(event:Event):void
+			{
+				_currentX=xSlider.value;
+				avatarWorld.setJointRotation(new Vector3D(_currentX, _currentY, _currentZ), jointSelection.selectedItem as String);
+			}
+
+			protected function rotateYAxis(event:Event):void
+			{
+				_currentY=ySlider.value;
+				avatarWorld.setJointRotation(new Vector3D(_currentX, _currentY, _currentZ), jointSelection.selectedItem as String);
+			}
+
+			protected function rotateZAxis(event:Event):void
+			{
+				_currentZ=zSlider.value;
+				avatarWorld.setJointRotation(new Vector3D(_currentX, _currentY, _currentZ), jointSelection.selectedItem as String);
+			}
+
+			protected function onNewJointSelected(event:IndexChangeEvent):void
+			{
+				xSlider.value=0;
+				ySlider.value=0;
+				zSlider.value=0;
+			}
+
+			protected function skeletonRotation(event:Event):void
+			{
+				avatarWorld.rotateModel(skeletonRotationSlider.value);
+			}
+
+
+			protected function avatarAlexis(event:MouseEvent):void
+			{
+				avatarWorld.loadAvatar(new AlexisSkeleton.DAEFile, AlexisSkeleton.SKELETON_UID, AlexisSkeleton);
+				genderChoice.visible=genderChoice.includeInLayout=false;
+				avatarControls.visible=avatarControls.includeInLayout=true;
+				MotionNexus.launchPlugin(event);
+			}
+
+			protected function avatarJustin(event:MouseEvent):void
+			{
+				avatarWorld.loadAvatar(new JustinSkeleton.DAEFile, JustinSkeleton.SKELETON_UID, JustinSkeleton);
+				genderChoice.visible=genderChoice.includeInLayout=false;
+				avatarControls.visible=avatarControls.includeInLayout=true;
+				MotionNexus.launchPlugin(event);
+			}
+		]]>
+	</fx:Script>
+	<avateering:AvatarWorld width="100%"
+							height="100%"
+							id="avatarWorld"/>
+	<s:Group left="0"
+			 top="0"
+			 right="0"
+			 id="avatarControls"
+			 visible="false"
+			 includeInLayout="false">
+		<s:Rect width="100%"
+				height="100%">
+			<s:fill>
+				<s:SolidColor color="0x000000"/>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup paddingBottom="10"
+				  paddingLeft="10"
+				  paddingRight="10"
+				  paddingTop="10"
+				  verticalAlign="middle">
+			<s:Label text="Joint: "
+					 color="white"
+					 fontSize="16"/>
+			<s:DropDownList id="jointSelection"
+							selectedIndex="0"
+							change="onNewJointSelected(event)">
+				<s:ArrayCollection>
+					<fx:String>head</fx:String>
+					<fx:String>shoulderCenter</fx:String>
+					<fx:String>spine</fx:String>
+					<fx:String>spine1</fx:String>
+					<fx:String>spine2</fx:String>
+					<fx:String>hipCenter</fx:String>
+					<fx:String>rightArm</fx:String>
+					<fx:String>rightElbow</fx:String>
+					<fx:String>rightShoulder</fx:String>
+					<fx:String>leftArm</fx:String>
+					<fx:String>leftElbow</fx:String>
+					<fx:String>leftShoulder</fx:String>
+					<fx:String>leftHip</fx:String>
+					<fx:String>rightHip</fx:String>
+					<fx:String>leftKnee</fx:String>
+					<fx:String>rightKnee</fx:String>
+					<fx:String>leftFoot</fx:String>
+					<fx:String>rightFoot</fx:String>
+				</s:ArrayCollection>
+			</s:DropDownList>
+			<s:Spacer width="20"/>
+			<s:Label text="Rotation: "
+					 color="white"
+					 fontSize="16"/>
+			<s:Label text="X"
+					 color="white"
+					 fontSize="16"/>
+			<s:HSlider minimum="-180"
+					   maximum="180"
+					   id="xSlider"
+					   value="0"
+					   change="rotateXAxis(event)"/>
+			<s:Label text="Y"
+					 color="white"
+					 fontSize="16"/>
+			<s:HSlider minimum="-180"
+					   maximum="180"
+					   id="ySlider"
+					   value="0"
+					   change="rotateYAxis(event)"/>
+			<s:Label text="Z"
+					 color="white"
+					 fontSize="16"/>
+			<s:HSlider minimum="-2"
+					   maximum="2"
+					   snapInterval=".2"
+					   id="zSlider"
+					   value="0"
+					   change="rotateYAxis(event)"/>
+			<s:Spacer width="20"/>
+			<s:Label text="Rotate Skeleton"
+					 color="white"
+					 fontSize="16"/>
+			<s:HSlider id="skeletonRotationSlider"
+					   value="0"
+					   change="skeletonRotation(event)"
+					   minimum="-10"
+					   maximum="10"/>
+		</s:HGroup>
+	</s:Group>
+
+	<s:Group verticalCenter="0"
+			 horizontalCenter="0"
+			 id="genderChoice">
+		<s:Rect width="100%"
+				height="100%"
+				radiusX="10"
+				radiusY="10">
+			<s:fill>
+				<s:SolidColor color="0x000000"/>
+			</s:fill>
+		</s:Rect>
+		<s:HGroup gap="50"
+				  paddingBottom="25"
+				  paddingLeft="25"
+				  paddingRight="25"
+				  paddingTop="25">
+			<s:Button width="100"
+					  height="100"
+					  label="Justin"
+					  click="avatarJustin(event)"/>
+			<s:Button width="100"
+					  height="100"
+					  label="Alexis"
+					  click="avatarAlexis(event)"/>
+		</s:HGroup>
+	</s:Group>
+
+	<s:Image left="0"
+			 bottom="0"
+			 height="120"
+			 width="160"
+			 id="depthImage"/>
+</s:Application>
