@@ -1,12 +1,14 @@
 package
 {
+	import com.motionnexus.events.MotionNexusCameraEvent;
+	import com.motionnexus.events.MotionNexusPluginStatusEvent;
+	import com.motionnexus.events.MotionNexusSkeletonsUpdatedEvent;
+	import com.motionnexus.infastructure.IMotionNexusSkeletonJoint;
 	import com.motionnexus.openni.MotionNexus;
 	import com.motionnexus.openni.data.settings.MotionNexusSettings;
 	import com.motionnexus.openni.data.skeleton.MotionNexusSkeleton;
 	import com.motionnexus.openni.data.skeleton.MotionNexusSkeletonJoint;
-	import com.motionnexus.openni.events.MotionNexusCameraEvent;
-	import com.motionnexus.openni.events.MotionNexusPluginStatusEvent;
-	import com.motionnexus.openni.events.MotionNexusSkeletonsUpdatedEvent;
+	import com.motionnexus.openni.protocols.services.ClientSocketService;
 	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -40,10 +42,10 @@ package
 				this.stage.align = StageAlign.TOP_LEFT;
 				this.stage.scaleMode = StageScaleMode.NO_SCALE;
 			}
-			stage.addEventListener(Event.RESIZE, onResize);
-			
+			stage.addEventListener(Event.RESIZE, onResize);  
+	
 			//Make sure the plugin is intsalled before anything else
-			MotionNexus.addEventListener(MotionNexusPluginStatusEvent.PLUGIN_INSTALLED, onPluginInstalled);
+			MotionNexus.addListener(MotionNexusPluginStatusEvent.PLUGIN_INSTALLED, onPluginInstalled);
 		}
 		
 		/**
@@ -64,10 +66,10 @@ package
 				MotionNexus.pluginSettings=settings;
 				
 				//Used when depth image is updated
-				MotionNexus.addEventListener(MotionNexusCameraEvent.IMAGE_UPDATED, onDepthImageUpdated);
+				MotionNexus.addListener(MotionNexusCameraEvent.IMAGE_UPDATED, onDepthImageUpdated);
 				
 				//Display skeleton container
-				MotionNexus.addEventListener(MotionNexusSkeletonsUpdatedEvent.SKELETONS_UPDATED, onskeletonsUpdated);
+				MotionNexus.addListener(MotionNexusSkeletonsUpdatedEvent.SKELETONS_UPDATED, onskeletonsUpdated);
 			}
 			else
 			{
@@ -158,10 +160,10 @@ package
 		 * @param target
 		 *
 		 */
-		private function moveTo(joint:MotionNexusSkeletonJoint, target:Graphics):void
+		private function moveTo(joint:IMotionNexusSkeletonJoint, target:Graphics):void
 		{
 			var scale:Point;
-			scale = joint.scaleToScreen(stage.stageWidth,stage.stageHeight);
+			scale = (joint as MotionNexusSkeletonJoint).scaleToScreen(stage.stageWidth,stage.stageHeight);
 			target.moveTo(scale.x, scale.y);
 		}
 		
@@ -171,10 +173,10 @@ package
 		 * @param target
 		 *
 		 */
-		private function lineTo(joint:MotionNexusSkeletonJoint, target:Graphics):void
+		private function lineTo(joint:IMotionNexusSkeletonJoint, target:Graphics):void
 		{
 			var scale:Point;
-			scale = joint.scaleToScreen(stage.stageWidth,stage.stageHeight);
+			scale = (joint as MotionNexusSkeletonJoint).scaleToScreen(stage.stageWidth,stage.stageHeight);
 			target.lineTo(scale.x, scale.y);
 		}
 		
