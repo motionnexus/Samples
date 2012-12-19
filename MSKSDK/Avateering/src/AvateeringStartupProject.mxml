@@ -14,17 +14,18 @@
 			import com.motionnexus.avateering.AvatarRigged;
 			import com.motionnexus.avateering.avatars.AlexisSkeleton;
 			import com.motionnexus.avateering.avatars.JustinSkeleton;
-			import com.motionnexus.avateering.data.skeleton.AvateeringSkeleton;
-			import com.motionnexus.avateering.processors.AvateeringConstrainProcessor;
-			import com.motionnexus.avateering.processors.AvateeringRotationProcessor;
-			import com.motionnexus.plugin.MotionNexus;
-			import com.motionnexus.plugin.data.settings.MotionNexusPluginSettings;
-			import com.motionnexus.plugin.data.skeleton.MotionNexusSkeleton;
-			import com.motionnexus.plugin.events.MotionNexusCameraEvent;
-			import com.motionnexus.plugin.events.MotionNexusSkeletonEvent;
-
+			import com.motionnexus.events.MotionNexusCameraEvent;
+			import com.motionnexus.events.MotionNexusSkeletonsUpdatedEvent;
+			import com.motionnexus.msksdk.MotionNexus;
+			import com.motionnexus.msksdk.avateering.data.skeleton.AvateeringSkeleton;
+			import com.motionnexus.msksdk.avateering.processors.AvateeringConstrainProcessor;
+			import com.motionnexus.msksdk.avateering.processors.AvateeringRotationProcessor;
+			import com.motionnexus.msksdk.data.settings.MotionNexusSettings;
+			import com.motionnexus.msksdk.data.skeleton.MotionNexusSkeleton;
+			import com.motionnexus.msksdk.data.skeleton.MotionNexusSkeletonJoint;
+			
 			import mx.events.FlexEvent;
-
+			
 			import spark.events.IndexChangeEvent;
 			private var _currentX:Number=0;
 			private var _currentY:Number=0;
@@ -32,11 +33,13 @@
 
 			protected function onCreationCompleteHandler(event:FlexEvent):void
 			{
-				MotionNexus.initializeWithApplicationId('7da275b6-9f13-4607-a498-d2e55150fbca');
-				var settings:MotionNexusPluginSettings=new MotionNexusPluginSettings(MotionNexusPluginSettings.USER_LOCAL, false, false, false, true);
+				var settings:MotionNexusSettings=new MotionNexusSettings();
+				settings.depthImageEnabled=true;
+				settings.skeletonTrackingEnabled=true;
+				settings.nearModeEnabled=true;
 				MotionNexus.pluginSettings=settings;
-				MotionNexus.addEventListener(MotionNexusSkeletonEvent.USER_SKELETON_UPDATED, updateSkeleton);
-				MotionNexus.addEventListener(MotionNexusCameraEvent.IMAGE_UPDATED, depthImageUpdated);
+				MotionNexus.addListener(MotionNexusSkeletonsUpdatedEvent.SKELETONS_UPDATED, updateSkeleton);
+				MotionNexus.addListener(MotionNexusCameraEvent.IMAGE_UPDATED, depthImageUpdated);
 			}
 
 			public function depthImageUpdated(event:MotionNexusCameraEvent):void
@@ -44,9 +47,9 @@
 				depthImage.source=event.image;
 			}
 
-			public function updateSkeleton(evt:MotionNexusSkeletonEvent):void
+			public function updateSkeleton(evt:MotionNexusSkeletonsUpdatedEvent):void
 			{
-				var skeletonAv:AvateeringSkeleton=processSkeletonMixamo(evt.userSkeleton);
+				var skeletonAv:AvateeringSkeleton=processSkeletonMixamo(evt.mostActiveSkeleton as MotionNexusSkeleton);
 				avatarWorld.setJointRotation(skeletonAv.leftShoulderRotation, AvatarRigged.LEFT_SHOULDER);
 				avatarWorld.setJointRotation(skeletonAv.rightShoulderRotation, AvatarRigged.RIGHT_SHOULDER);
 				avatarWorld.setJointRotation(skeletonAv.leftElbowRotation, AvatarRigged.LEFT_ELBOW);
@@ -63,7 +66,7 @@
 				avatarWorld.setJointRotation(skeletonAv.rightKneeRotation, AvatarRigged.RIGHT_KNEE);
 
 				avatarWorld.moveModelVertical((skeletonAv.rightKneeRotation.x + skeletonAv.leftKneeRotation.x) / 2);
-				avatarWorld.moveModelHorizontal(evt.userSkeleton.hipCenter.depth.x - 160);
+				avatarWorld.moveModelHorizontal((evt.mostActiveSkeleton as MotionNexusSkeleton).hipCenter.depth.x - 160);
 				avatarWorld.setJointRotation(skeletonAv.leftFootRotation, AvatarRigged.LEFT_FOOT);
 				avatarWorld.setJointRotation(skeletonAv.rightFootRotation, AvatarRigged.RIGHT_FOOT);
 			}

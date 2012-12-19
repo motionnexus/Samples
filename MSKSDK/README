@@ -1,0 +1,13 @@
+Motion Nexus Kinect samples. For more information about Motion Nexus and to install the plugin, visit http://www.motionnexus.com/.
+
+Requirements:
+=============
+
+1) Motion Nexus Kinect plugin installed
+2) Kinect device
+3) AS3 compiler
+
+Desription:
+=============
+
+Kinect samples are specific to the Kinect plugin and allow for skeletal manipulation and engagement. Please check out <a href="http://motionnexus.zendesk.com/home">Motion Nexus support</a> for questions. Thanks for using Motion Nexus.

@@ -1,14 +1,14 @@
 package
 {
 	import com.bit101.components.PushButton;
-	import com.motionnexus.plugin.MotionNexus;
-	import com.motionnexus.plugin.data.settings.MotionNexusPluginSettings;
-	import com.motionnexus.plugin.data.skeleton.MotionNexusSkeleton;
-	import com.motionnexus.plugin.data.skeleton.MotionNexusSkeletonJoint;
-	import com.motionnexus.plugin.data.skeleton.MotionNexusSkeletonJointType;
-	import com.motionnexus.plugin.events.MotionNexusFaceTrackingEvent;
-	import com.motionnexus.plugin.events.MotionNexusPluginInstalledEvent;
-	import com.motionnexus.plugin.events.MotionNexusSkeletonEvent;
+	import com.motionnexus.events.MotionNexusPluginStatusEvent;
+	import com.motionnexus.events.MotionNexusSkeletonsUpdatedEvent;
+	import com.motionnexus.infastructure.IMotionNexusSkeletonJoint;
+	import com.motionnexus.msksdk.MotionNexus;
+	import com.motionnexus.msksdk.data.settings.MotionNexusSettings;
+	import com.motionnexus.msksdk.data.skeleton.MotionNexusSkeleton;
+	import com.motionnexus.msksdk.data.skeleton.MotionNexusSkeletonJoint;
+	import com.motionnexus.msksdk.events.MotionNexusFaceTrackingEvent;
 	
 	import flash.display.Graphics;
 	import flash.display.Shape;
@@ -31,19 +31,16 @@ package
 
 		public function onAddedToStage(event:Event):void
 		{
-			//Use Motion Nexus application id
-			MotionNexus.initializeWithApplicationId('8d46c8b4-a219-4206-903e-aa175b88f6a3');
-
 			//Check the status of the Plugin to see if it is installed or not
-			MotionNexus.addEventListener(MotionNexusPluginInstalledEvent.PLUGIN_INSTALLED, onPluginStatus);
+			MotionNexus.addListener(MotionNexusPluginStatusEvent.PLUGIN_INSTALLED, onPluginStatus);
 		}
 
 		/**
 		 * Once we know the plugin is or is not installed we can help identify to the user what is the next steps
 		 */
-		protected function onPluginStatus(event:MotionNexusPluginInstalledEvent):void
+		protected function onPluginStatus(event:MotionNexusPluginStatusEvent):void
 		{
-			if (event.pluginInstalled == true)
+			if (event.description == 'true')
 			{
 				//Create button to launch plugin        
 				_startButton=new PushButton(this, 0, 0, 'Lets GO!', onStart);
@@ -51,14 +48,18 @@ package
 				_startButton.x=(640 / 2) - (_startButton.width / 2);
 				_startButton.y=(480 / 2) - (_startButton.height / 2);
 
+				var settings:MotionNexusSettings = new MotionNexusSettings();
+				settings.skeletonTrackingEnabled = true;
+				settings.nearModeEnabled=true;
+				settings.faceTrackingEnabled=true;
 				//Retrieve information from plugin locally for a non collaborative environment  
-				MotionNexus.pluginSettings=new MotionNexusPluginSettings(MotionNexusPluginSettings.USER_LOCAL, true, true, true);
+				MotionNexus.pluginSettings=settings;
 
 				//Used when face model information is updated   
-				MotionNexus.addEventListener(MotionNexusFaceTrackingEvent.FACE_MODEL_AVAILABLE, onFaceModelUpdated);
+				MotionNexus.addListener(MotionNexusFaceTrackingEvent.FACE_MODEL_AVAILABLE, onFaceModelUpdated);
 
 				//Used when skeleton information is updated   
-				MotionNexus.addEventListener(MotionNexusSkeletonEvent.USER_SKELETON_UPDATED, updateSkeleton);
+				MotionNexus.addListener(MotionNexusSkeletonsUpdatedEvent.SKELETONS_UPDATED, updateSkeleton);
 
 				//Create initial joints and shape for skeleton
 				_skeletons=addChild(new Shape()) as Shape;
@@ -201,12 +202,12 @@ package
 		 * @param $skeleton
 		 *
 		 */
-		public function updateSkeleton($skeleton:MotionNexusSkeletonEvent):void
+		public function updateSkeleton($skeleton:MotionNexusSkeletonsUpdatedEvent):void
 		{
 			//Clear the skeleton lines and call to draw the skeleton
 			_skeletons.graphics.clear();
 			_skeletons.graphics.lineStyle(2, 0xFFFFFF, 1);
-			drawSkeleton($skeleton.userSkeleton, _skeletons.graphics);
+			drawSkeleton($skeleton.mostActiveSkeleton as MotionNexusSkeleton, _skeletons.graphics);
 
 			var joint:MotionNexusSkeletonJoint;
 			var circle:Sprite;
@@ -214,19 +215,11 @@ package
 			//Draw out all skeleton joints, and if is seated the joint is null so hide the ciricle
 			for (var i:int=0; i < MotionNexusSkeleton.JOINT_COUNT; i++)
 			{
-				joint=$skeleton.userSkeleton.joints[i];
+				joint=$skeleton.mostActiveSkeleton.joints[i];
 				circle=_joints[i];
-				if (joint != null && joint.jointType != MotionNexusSkeletonJointType.head)
-				{
-					//circle
-					circle.x=joint.rgb.x;
-					circle.y=joint.rgb.y;
-					circle.visible=true;
-				}
-				else
-				{
-					circle.visible=false;
-				}
+				circle.x=joint.rgb.x;
+				circle.y=joint.rgb.y;
+				circle.visible=true;
 			}
 
 		}
@@ -291,9 +284,9 @@ package
 		 * @param target
 		 *
 		 */
-		private function moveTo(joint:MotionNexusSkeletonJoint, target:Graphics):void
+		private function moveTo(joint:IMotionNexusSkeletonJoint, target:Graphics):void
 		{
-			target.moveTo(joint.rgb.x, joint.rgb.y);
+			target.moveTo(joint.depth.x*2, joint.depth.y*2);
 		}
 
 		/**
@@ -302,9 +295,9 @@ package
 		 * @param target
 		 *
 		 */
-		private function lineTo(joint:MotionNexusSkeletonJoint, target:Graphics):void
+		private function lineTo(joint:IMotionNexusSkeletonJoint, target:Graphics):void
 		{
-			target.lineTo(joint.rgb.x, joint.rgb.y);
+			target.lineTo(joint.depth.x*2, joint.depth.y*2);
 		}
 
 		/**

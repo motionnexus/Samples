@@ -1,15 +1,11 @@
 package
 {
 	import com.bit101.components.PushButton;
-	import com.motionnexus.plugin.MotionNexus;
-	import com.motionnexus.plugin.data.settings.MotionNexusPluginSettings;
-	import com.motionnexus.plugin.data.skeleton.MotionNexusSkeleton;
-	import com.motionnexus.plugin.data.skeleton.MotionNexusSkeletonJoint;
-	import com.motionnexus.plugin.events.MotionNexusFaceTrackingEvent;
-	import com.motionnexus.plugin.events.MotionNexusPluginInstalledEvent;
-	import com.motionnexus.plugin.events.MotionNexusSkeletonEvent;
-	import com.motionnexus.plugin.events.MotionNexusSpeechRecognitionEvent;
-
+	import com.motionnexus.events.MotionNexusPluginStatusEvent;
+	import com.motionnexus.msksdk.MotionNexus;
+	import com.motionnexus.msksdk.data.settings.MotionNexusSettings;
+	import com.motionnexus.msksdk.events.MotionNexusSpeechRecognitionEvent;
+	
 	import flash.display.Bitmap;
 	import flash.display.Graphics;
 	import flash.display.Loader;
@@ -48,11 +44,9 @@ package
 		 */
 		public function onAddedToStage(event:Event):void
 		{
-			//Use Motion Nexus application id
-			MotionNexus.initializeWithApplicationId('a3877618-3759-4b60-beb0-86cb0632959e');
 
 			//Check the status of the Plugin to see if it is installed or not
-			MotionNexus.addEventListener(MotionNexusPluginInstalledEvent.PLUGIN_INSTALLED, onPluginStatus);
+			MotionNexus.addListener(MotionNexusPluginStatusEvent.PLUGIN_INSTALLED, onPluginStatus);
 
 			//Load turtle image
 			_loader=new Loader();
@@ -73,9 +67,9 @@ package
 		/**
 		 * Once we know the plugin is or is not installed we can help identify to the user what is the next steps
 		 */
-		protected function onPluginStatus(event:MotionNexusPluginInstalledEvent):void
+		protected function onPluginStatus(event:MotionNexusPluginStatusEvent):void
 		{
-			if (event.pluginInstalled == true)
+			if (event.description == 'true')
 			{
 				//Create button to launch plugin
 				_startButton=new PushButton(this, 0, 0, 'Lets GO!', onStart);
@@ -95,13 +89,13 @@ package
 				_instructionText.visible=false;
 
 				//Retrieve information from plugin locally for a non collaborative environment  
-				var settings:MotionNexusPluginSettings=new MotionNexusPluginSettings(MotionNexusPluginSettings.USER_LOCAL);
+				var settings:MotionNexusSettings = new MotionNexusSettings();
 				settings.speechRecognitionEnabled=true;
 				settings.speechRecognitionGrammarFile='https://s3.amazonaws.com/motionnexus.com/static/SpeechSampleGrammar.grxml';
 				MotionNexus.pluginSettings=settings;
 
 				//Used speech tag has been recognized
-				MotionNexus.addEventListener(MotionNexusSpeechRecognitionEvent.SPEECH_RECOGNIZED, onSpeechRecognized);
+				MotionNexus.addListener(MotionNexusSpeechRecognitionEvent.SPEECH_RECOGNIZED, onSpeechRecognized);
 			}
 		}
 
