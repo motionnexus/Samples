@@ -1,0 +1,11 @@
+Motion Nexus Gesutre samples. For more information about Motion Nexus and to install the plugin, visit http://www.motionnexus.com/.
+
+Requirements:
+=============
+
+1) Motion Nexus library or extension 2.0.1 or higher
+
+Desription:
+=============
+
+The Gesture sample is a simple way to impliment gestures for your NUI application. Using depth positioning and interfaces for gestures allows you to develop for both Kinect and OpenNI environment.
